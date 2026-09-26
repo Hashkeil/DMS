@@ -1,0 +1,6 @@
+# Activated by SPRING_PROFILES_ACTIVE=docker in Docker Compose.
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/${POSTGRES_DB:paperless}
+    username: ${POSTGRES_USER:paperless}
+    password: ${POSTGRES_PASSWORD:paperless}
