@@ -4,3 +4,6 @@
 .env
 .env.*
 semester-project.pdf
+**/node_modules
+**/dist
+**/.angular
