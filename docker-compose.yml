@@ -1,10 +1,19 @@
 services:
+  paperless-ui:
+    build:
+      context: paperless-ui
+    ports:
+      - "80:80"
+    depends_on:
+      - paperless-rest
+
   paperless-rest:
     build:
       context: .
       dockerfile: paperless-rest/Dockerfile
-    ports:
-      - "8081:8081"
+    # Internal only: reachable from the UI container via nginx (/api), not from the host.
+    expose:
+      - "8081"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       DDL_AUTO: ${DDL_AUTO:-update}
