@@ -12,6 +12,6 @@ class CategoryMapperTest {
         category.setId(1L);
         category.setName("Finance");
         category.setDescription("Invoices");
-        assertEquals(new CategoryResponse(1L, "Finance", "Invoices"), new CategoryMapper().toResponse(category));
+        assertEquals(new CategoryResponse(1L, "Finance", "Invoices"), org.mapstruct.factory.Mappers.getMapper(CategoryMapper.class).toResponse(category));
     }
 }

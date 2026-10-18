@@ -16,12 +16,48 @@ services:
       - "8081"
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER:-paperless}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-paperless}
+      UPLOAD_DIRECTORY: /app/uploads
       DDL_AUTO: ${DDL_AUTO:-update}
       POSTGRES_DB: ${POSTGRES_DB:-paperless}
       POSTGRES_USER: ${POSTGRES_USER:-paperless}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-paperless}
+    volumes:
+      - uploads:/app/uploads
     depends_on:
+      rabbitmq:
+        condition: service_healthy
       postgres:
+        condition: service_healthy
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-paperless}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-paperless}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  paperless-ocr-worker:
+    build:
+      context: .
+      dockerfile: paperless-ocr-worker/Dockerfile
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER:-paperless}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-paperless}
+    depends_on:
+      rabbitmq:
         condition: service_healthy
 
   postgres:
@@ -41,4 +77,6 @@ services:
       retries: 10
 
 volumes:
+  uploads:
+  rabbitmq-data:
   postgres-data:

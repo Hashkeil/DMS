@@ -1,6 +1,7 @@
 package at.fhtw.paperless.rest.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record DocumentResponse(
         Long id,
@@ -10,6 +11,7 @@ public record DocumentResponse(
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         Long categoryId,
-        String categoryName
+        String categoryName,
+        List<LabelResponse> labels
 ) {
 }

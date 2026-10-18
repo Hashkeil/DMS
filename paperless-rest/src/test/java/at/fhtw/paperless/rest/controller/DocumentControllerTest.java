@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class DocumentControllerTest {
     private final DocumentService service = mock(DocumentService.class);
     private MockMvc mvc;
-    private final DocumentResponse response = new DocumentResponse(1L, "Invoice", "invoice.pdf", null, null, null, null, null);
+    private final DocumentResponse response = new DocumentResponse(1L, "Invoice", "invoice.pdf", null, null, null, null, null, java.util.List.of());
     private final String validBody = """
             {"title":"Invoice","filename":"invoice.pdf"}
             """;

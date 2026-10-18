@@ -6,15 +6,17 @@ import at.fhtw.paperless.rest.exception.CategoryNotFoundException;
 import at.fhtw.paperless.rest.mapper.CategoryMapper;
 import at.fhtw.paperless.rest.repository.CategoryRepository;
 import at.fhtw.paperless.rest.repository.DocumentRepository;
-import org.springframework.dao.DataIntegrityViolationException;
+import at.fhtw.paperless.rest.exception.CategoryInUseException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@org.springframework.validation.annotation.Validated
 @Transactional(readOnly = true)
 public class CategoryService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(CategoryService.class);
     private final CategoryRepository categoryRepository;
     private final DocumentRepository documentRepository;
     private final CategoryMapper mapper;
@@ -27,7 +29,8 @@ public class CategoryService {
     }
 
     @Transactional
-    public CategoryResponse create(CategoryCreateRequest request) {
+    public CategoryResponse create(@jakarta.validation.Valid @jakarta.validation.constraints.NotNull CategoryCreateRequest request) {
+        log.info("Creating category metadata");
         Category category = new Category();
         category.setName(request.name());
         category.setDescription(request.description());
@@ -43,7 +46,8 @@ public class CategoryService {
     }
 
     @Transactional
-    public CategoryResponse update(Long id, CategoryUpdateRequest request) {
+    public CategoryResponse update(Long id, @jakarta.validation.Valid @jakarta.validation.constraints.NotNull CategoryUpdateRequest request) {
+        log.info("Updating category: id={}", id);
         Category category = findCategory(id);
         category.setName(request.name());
         category.setDescription(request.description());
@@ -52,9 +56,10 @@ public class CategoryService {
 
     @Transactional
     public void delete(Long id) {
+        log.info("Deleting category: id={}", id);
         Category category = findCategory(id);
         if (documentRepository.existsByCategoryId(id)) {
-            throw new DataIntegrityViolationException("Category is still used by documents");
+            throw new CategoryInUseException("Category is still used by documents");
         }
         categoryRepository.delete(category);
         categoryRepository.flush();

@@ -1,17 +1,13 @@
 package at.fhtw.paperless.rest.mapper;
-
 import at.fhtw.paperless.rest.dto.DocumentResponse;
+import at.fhtw.paperless.rest.dto.LabelResponse;
 import at.fhtw.paperless.rest.entity.Document;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-public class DocumentMapper {
-    public DocumentResponse toResponse(Document document) {
-        var category = document.getCategory();
-        return new DocumentResponse(document.getId(), document.getTitle(),
-                document.getFilename(), document.getDescription(),
-                document.getCreatedAt(), document.getUpdatedAt(),
-                category == null ? null : category.getId(),
-                category == null ? null : category.getName());
-    }
+@Mapper(uses = LabelMapper.class, componentModel = "spring")
+public interface DocumentMapper {
+    @Mapping(target = "categoryId", source = "category.id")
+    @Mapping(target = "categoryName", source = "category.name")
+    DocumentResponse toResponse(Document document);
 }

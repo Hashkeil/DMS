@@ -22,11 +22,13 @@ import static org.mockito.Mockito.*;
 class DocumentServiceTest {
     @Mock DocumentRepository documents;
     @Mock CategoryRepository categories;
+    @Mock LabelService labelService;
     DocumentService service;
 
     @BeforeEach
     void setUp() {
-        service = new DocumentService(documents, categories, new DocumentMapper());
+        service = new DocumentService(documents, categories, labelService,
+                org.mapstruct.factory.Mappers.getMapper(DocumentMapper.class));
     }
 
     private void stubSave() {
@@ -40,7 +42,7 @@ class DocumentServiceTest {
     @Test
     void createWithoutCategory() {
         stubSave();
-        var response = service.create(new DocumentCreateRequest("Invoice", "invoice.pdf", "Details", null));
+        var response = service.create(new DocumentCreateRequest("Invoice", "invoice.pdf", "Details", null, List.of()));
         assertEquals(1L, response.id());
         assertEquals("Invoice", response.title());
         assertEquals("invoice.pdf", response.filename());
@@ -56,7 +58,7 @@ class DocumentServiceTest {
         category.setName("Finance");
         when(categories.findById(2L)).thenReturn(Optional.of(category));
         stubSave();
-        var response = service.create(new DocumentCreateRequest("Invoice", "invoice.pdf", null, 2L));
+        var response = service.create(new DocumentCreateRequest("Invoice", "invoice.pdf", null, 2L, List.of()));
         assertEquals(2L, response.categoryId());
         assertEquals("Finance", response.categoryName());
     }
@@ -65,7 +67,7 @@ class DocumentServiceTest {
     void createWithMissingCategoryFailsWithoutSaving() {
         when(categories.findById(99L)).thenReturn(Optional.empty());
         assertThrows(CategoryNotFoundException.class,
-                () -> service.create(new DocumentCreateRequest("Invoice", "invoice.pdf", null, 99L)));
+                () -> service.create(new DocumentCreateRequest("Invoice", "invoice.pdf", null, 99L, List.of())));
         verify(documents, never()).saveAndFlush(any());
     }
 
@@ -100,7 +102,7 @@ class DocumentServiceTest {
         when(documents.findById(1L)).thenReturn(Optional.of(document));
         when(categories.findById(2L)).thenReturn(Optional.of(category));
         stubSave();
-        var response = service.update(1L, new DocumentUpdateRequest("Updated", "new.pdf", "New details", 2L));
+        var response = service.update(1L, new DocumentUpdateRequest("Updated", "new.pdf", "New details", 2L, null));
         assertEquals("Updated", response.title());
         assertEquals("new.pdf", response.filename());
         assertEquals("New details", response.description());
@@ -114,7 +116,7 @@ class DocumentServiceTest {
         document.setDescription("Old description");
         when(documents.findById(1L)).thenReturn(Optional.of(document));
         stubSave();
-        var response = service.update(1L, new DocumentUpdateRequest("Updated", "new.pdf", null, null));
+        var response = service.update(1L, new DocumentUpdateRequest("Updated", "new.pdf", null, null, null));
         assertNull(response.categoryId());
         assertNull(response.description());
         assertNull(document.getCategory());
@@ -127,7 +129,7 @@ class DocumentServiceTest {
         document.setTitle("Original");
         when(documents.findById(1L)).thenReturn(Optional.of(document));
         assertThrows(CategoryNotFoundException.class,
-                () -> service.update(1L, new DocumentUpdateRequest("Changed", "new.pdf", null, 99L)));
+                () -> service.update(1L, new DocumentUpdateRequest("Changed", "new.pdf", null, 99L, null)));
         assertEquals("Original", document.getTitle());
         verify(documents, never()).saveAndFlush(any());
     }
@@ -135,7 +137,7 @@ class DocumentServiceTest {
     @Test
     void updateMissingDocument() {
         assertThrows(DocumentNotFoundException.class,
-                () -> service.update(99L, new DocumentUpdateRequest("Updated", "new.pdf", null, null)));
+                () -> service.update(99L, new DocumentUpdateRequest("Updated", "new.pdf", null, null, null)));
         verify(documents, never()).saveAndFlush(any());
     }
 

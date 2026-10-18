@@ -14,27 +14,33 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
+@org.springframework.validation.annotation.Validated
 @Transactional(readOnly = true)
 public class DocumentService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DocumentService.class);
     private final DocumentRepository documentRepository;
     private final CategoryRepository categoryRepository;
+    private final LabelService labelService;
     private final DocumentMapper mapper;
 
     public DocumentService(DocumentRepository documentRepository, CategoryRepository categoryRepository,
-                           DocumentMapper mapper) {
+                           LabelService labelService, DocumentMapper mapper) {
         this.documentRepository = documentRepository;
         this.categoryRepository = categoryRepository;
+        this.labelService = labelService;
         this.mapper = mapper;
     }
 
     @Transactional
-    public DocumentResponse create(DocumentCreateRequest request) {
+    public DocumentResponse create(@jakarta.validation.Valid @jakarta.validation.constraints.NotNull DocumentCreateRequest request) {
+        log.info("Creating document metadata");
         Category category = findCategory(request.categoryId());
         Document document = new Document();
         document.setTitle(request.title());
         document.setFilename(request.filename());
         document.setDescription(request.description());
         document.setCategory(category);
+        document.setLabels(labelService.resolve(request.labels()));
         return mapper.toResponse(documentRepository.saveAndFlush(document));
     }
 
@@ -47,18 +53,23 @@ public class DocumentService {
     }
 
     @Transactional
-    public DocumentResponse update(Long id, DocumentUpdateRequest request) {
+    public DocumentResponse update(Long id, @jakarta.validation.Valid @jakarta.validation.constraints.NotNull DocumentUpdateRequest request) {
+        log.info("Updating document: id={}", id);
         Document document = findDocument(id);
         Category category = findCategory(request.categoryId());
         document.setTitle(request.title());
         document.setFilename(request.filename());
         document.setDescription(request.description());
         document.setCategory(category);
+        if (request.labels() != null) {
+            document.setLabels(labelService.resolve(request.labels()));
+        }
         return mapper.toResponse(documentRepository.saveAndFlush(document));
     }
 
     @Transactional
     public void delete(Long id) {
+        log.info("Deleting document: id={}", id);
         documentRepository.delete(findDocument(id));
     }
 
