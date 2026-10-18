@@ -20,7 +20,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({org.springframework.web.method.annotation.HandlerMethodValidationException.class, InvalidDocumentException.class, jakarta.validation.ConstraintViolationException.class,
             org.springframework.web.bind.MissingServletRequestParameterException.class,
             org.springframework.web.multipart.support.MissingServletRequestPartException.class})
-    public ResponseEntity<ErrorResponse> handleInvalidUpload(Exception failure, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleInvalidUpload(HttpServletRequest request) {
         return error(HttpStatus.BAD_REQUEST, "Invalid upload: check PDF, title and category", request);
     }
 
@@ -72,8 +72,17 @@ public class GlobalExceptionHandler {
     }
 
     private ResponseEntity<ErrorResponse> error(HttpStatus status, String message, HttpServletRequest request) {
-        log.warn("Request failed: status={}, path={}", status.value(), request.getRequestURI());
+        String requestUri = sanitizeForLog(request.getRequestURI());
+        log.warn("Request failed: status={}, path={}", status.value(), requestUri);
         return ResponseEntity.status(status).body(new ErrorResponse(
-                LocalDateTime.now(), status.value(), status.getReasonPhrase(), message, request.getRequestURI()));
+                LocalDateTime.now(), status.value(), status.getReasonPhrase(), message, requestUri));
+    }
+
+    // Log injection safety: URIs may contain user-supplied path segments.
+    private String sanitizeForLog(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.replace('\n', '_').replace('\r', '_');
     }
 }

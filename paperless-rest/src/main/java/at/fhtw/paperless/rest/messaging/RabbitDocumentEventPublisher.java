@@ -32,7 +32,7 @@ public class RabbitDocumentEventPublisher implements DocumentEventPublisher {
                     .setMessageId(correlation.getId()).build();
             rabbit.send("", RabbitConfiguration.QUEUE, message, correlation);
             var confirm = correlation.getFuture().get(5, TimeUnit.SECONDS);
-            if (!confirm.isAck() || correlation.getReturned() != null) {
+            if (!confirm.ack() || correlation.getReturned() != null) {
                 throw new DocumentPublishException("OCR message was not accepted by the queue");
             }
             log.info("OCR message accepted: documentId={}, messageId={}", event.documentId(), correlation.getId());
