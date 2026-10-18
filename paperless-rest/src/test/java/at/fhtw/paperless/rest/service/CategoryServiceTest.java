@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
+import at.fhtw.paperless.rest.exception.CategoryInUseException;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +27,7 @@ class CategoryServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new CategoryService(categories, documents, new CategoryMapper());
+        service = new CategoryService(categories, documents, org.mapstruct.factory.Mappers.getMapper(CategoryMapper.class));
     }
 
     @Test
@@ -103,7 +103,7 @@ class CategoryServiceTest {
     void cannotDeleteCategoryUsedByDocuments() {
         when(categories.findById(1L)).thenReturn(Optional.of(new Category()));
         when(documents.existsByCategoryId(1L)).thenReturn(true);
-        assertThrows(DataIntegrityViolationException.class, () -> service.delete(1L));
+        assertThrows(CategoryInUseException.class, () -> service.delete(1L));
         verify(categories, never()).delete(any());
     }
 }

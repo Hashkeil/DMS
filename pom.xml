@@ -17,6 +17,7 @@
     <description>SWEN3 semester project</description>
     <modules>
         <module>paperless-rest</module>
+        <module>paperless-ocr-worker</module>
     </modules>
     <properties>
         <java.version>25</java.version>

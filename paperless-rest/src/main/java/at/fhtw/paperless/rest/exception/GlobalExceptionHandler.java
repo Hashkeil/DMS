@@ -15,7 +15,34 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    @ExceptionHandler({DocumentNotFoundException.class, CategoryNotFoundException.class})
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler({org.springframework.web.method.annotation.HandlerMethodValidationException.class, InvalidDocumentException.class, jakarta.validation.ConstraintViolationException.class,
+            org.springframework.web.bind.MissingServletRequestParameterException.class,
+            org.springframework.web.multipart.support.MissingServletRequestPartException.class})
+    public ResponseEntity<ErrorResponse> handleInvalidUpload(Exception failure, HttpServletRequest request) {
+        return error(HttpStatus.BAD_REQUEST, "Invalid upload: check PDF, title and category", request);
+    }
+
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleTooLarge(HttpServletRequest request) {
+        return error(HttpStatus.PAYLOAD_TOO_LARGE, "PDF exceeds the upload size limit (10 MiB)", request);
+    }
+
+    @ExceptionHandler(DocumentPublishException.class)
+    public ResponseEntity<ErrorResponse> handlePublish(DocumentPublishException failure, HttpServletRequest request) {
+        log.error("OCR publish failed", failure);
+        return error(HttpStatus.SERVICE_UNAVAILABLE, "OCR queue unavailable; upload was not completed", request);
+    }
+
+    @ExceptionHandler(DocumentStorageException.class)
+    public ResponseEntity<ErrorResponse> handleStorage(DocumentStorageException failure, HttpServletRequest request) {
+        log.error("PDF storage failed", failure);
+        return error(HttpStatus.INTERNAL_SERVER_ERROR, "Could not store document", request);
+    }
+
+    @ExceptionHandler({DocumentNotFoundException.class, CategoryNotFoundException.class,
+            LabelNotFoundException.class})
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException exception, HttpServletRequest request) {
         return error(HttpStatus.NOT_FOUND, exception.getMessage(), request);
     }
@@ -39,12 +66,13 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, "Path parameter must be a valid numeric identifier", request);
     }
 
-    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ExceptionHandler({DataIntegrityViolationException.class, CategoryInUseException.class})
     public ResponseEntity<ErrorResponse> handleConflict(HttpServletRequest request) {
         return error(HttpStatus.CONFLICT, "Operation conflicts with existing data. A category in use cannot be deleted.", request);
     }
 
     private ResponseEntity<ErrorResponse> error(HttpStatus status, String message, HttpServletRequest request) {
+        log.warn("Request failed: status={}, path={}", status.value(), request.getRequestURI());
         return ResponseEntity.status(status).body(new ErrorResponse(
                 LocalDateTime.now(), status.value(), status.getReasonPhrase(), message, request.getRequestURI()));
     }

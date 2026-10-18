@@ -1,0 +1,13 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import ts from 'typescript';
+const source = readFileSync(new URL('../src/app/core/upload-validation.ts', import.meta.url), 'utf8');
+const js = ts.transpile(source, { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 });
+const { uploadError } = await import('data:text/javascript;base64,' + Buffer.from(js).toString('base64'));
+test('requires a file', () => assert.ok(uploadError(null)));
+test('rejects empty file', () => assert.ok(uploadError({name:'a.pdf',size:0})));
+test('rejects non-PDF extension', () => assert.ok(uploadError({name:'a.txt',size:10})));
+test('rejects oversized PDF', () => assert.ok(uploadError({name:'a.pdf',size:10485761})));
+test('accepts limit and uppercase extension', () => assert.equal(uploadError({name:'A.PDF',size:10485760}),null));
+test('rejects long filenames', () => assert.ok(uploadError({name:'x'.repeat(252)+'.pdf',size:10})));

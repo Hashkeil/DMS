@@ -4,10 +4,13 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Positive;
 
+import java.util.List;
+
 public record DocumentCreateRequest(
         @NotBlank @Size(max = 255) String title,
         @NotBlank @Size(max = 255) String filename,
         String description,
-        @Positive Long categoryId
+        @Positive Long categoryId,
+        @Size(max = 32) List<@NotBlank @Size(max = 50) String> labels
 ) {
 }

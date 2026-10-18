@@ -1,12 +1,10 @@
 package at.fhtw.paperless.rest.mapper;
-
 import at.fhtw.paperless.rest.dto.CategoryResponse;
 import at.fhtw.paperless.rest.entity.Category;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-public class CategoryMapper {
-    public CategoryResponse toResponse(Category category) {
-        return new CategoryResponse(category.getId(), category.getName(), category.getDescription());
-    }
+@Mapper(componentModel = "spring")
+public interface CategoryMapper {
+    CategoryResponse toResponse(Category category);
 }

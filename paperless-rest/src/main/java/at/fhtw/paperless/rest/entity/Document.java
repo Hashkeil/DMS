@@ -2,6 +2,8 @@ package at.fhtw.paperless.rest.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "documents")
@@ -9,6 +11,11 @@ public class Document {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    private String storageKey;
+
+    public String getStorageKey() { return storageKey; }
+    public void setStorageKey(String storageKey) { this.storageKey = storageKey; }
 
     @Column(nullable = false)
     private String title;
@@ -28,6 +35,13 @@ public class Document {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
+
+    // PERSIST lets freshly created labels be saved together with the document.
+    @ManyToMany(fetch = FetchType.EAGER, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @JoinTable(name = "document_labels",
+            joinColumns = @JoinColumn(name = "document_id"),
+            inverseJoinColumns = @JoinColumn(name = "label_id"))
+    private List<Label> labels = new ArrayList<>();
 
     public Document() {
     }
@@ -73,6 +87,12 @@ public class Document {
     }
     public void setCategory(Category category) {
         this.category = category;
+    }
+    public List<Label> getLabels() {
+        return labels;
+    }
+    public void setLabels(List<Label> labels) {
+        this.labels = labels == null ? new ArrayList<>() : new ArrayList<>(labels);
     }
 
     @PrePersist
