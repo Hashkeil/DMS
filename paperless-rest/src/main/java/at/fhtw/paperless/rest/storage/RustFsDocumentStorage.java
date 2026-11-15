@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.UUID;
 
 /** Stores PDFs in RustFS (S3-compatible). */
@@ -39,7 +40,7 @@ public class RustFsDocumentStorage implements DocumentStorage {
         }
         String key = UUID.randomUUID() + ".pdf";
         try (var input = file.getInputStream()) {
-            if (!new String(file.getBytes(), 0, 5, StandardCharsets.US_ASCII).equals("%PDF-")) {
+            if (!new String(Arrays.copyOf(file.getBytes(), 5), StandardCharsets.US_ASCII).equals("%PDF-")) {
                 throw new InvalidDocumentException("File must contain a PDF header");
             }
             try { s3.headBucket(b -> b.bucket(bucket)); }
