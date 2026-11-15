@@ -7,6 +7,7 @@ COPY paperless-ocr-worker/src paperless-ocr-worker/src
 RUN mvn --batch-mode --no-transfer-progress -pl paperless-ocr-worker -am clean verify
 
 FROM eclipse-temurin:25-jre
+RUN apt-get update && apt-get install -y --no-install-recommends ghostscript tesseract-ocr && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /build/paperless-ocr-worker/target/paperless-ocr-worker.jar app.jar
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

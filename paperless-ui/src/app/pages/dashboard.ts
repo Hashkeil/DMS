@@ -51,7 +51,7 @@ import { DocumentResponse } from '../core/models';
         type="search"
         placeholder="Search title, filename, category or label…"
         [ngModel]="query()"
-        (ngModelChange)="query.set($event)"
+        (ngModelChange)="search($event)"
       />
     </div>
 
@@ -143,14 +143,24 @@ export class Dashboard implements OnInit {
   protected readonly filtered = computed(() => {
     const term = this.query().trim().toLowerCase();
     if (!term) return this.documents();
-    return this.documents().filter(
+    const local = this.documents().filter(
       (doc) =>
         doc.title.toLowerCase().includes(term) ||
         doc.filename.toLowerCase().includes(term) ||
         doc.categoryName?.toLowerCase().includes(term) ||
         doc.labels.some((l) => l.name.toLowerCase().includes(term)),
     );
+    // Add documents whose OCR text matched in Elasticsearch.
+    return [...local, ...this.textHits().filter((hit) => !local.some((doc) => doc.id === hit.id))];
   });
+
+  protected readonly textHits = signal<DocumentResponse[]>([]);
+
+  protected search(value: string): void {
+    this.query.set(value);
+    if (!value.trim()) return this.textHits.set([]);
+    this.api.searchDocuments(value.trim()).subscribe((hits) => this.textHits.set(hits));
+  }
 
   ngOnInit(): void {
     this.api.getDocuments().subscribe({
