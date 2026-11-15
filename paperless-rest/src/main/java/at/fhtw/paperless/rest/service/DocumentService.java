@@ -48,6 +48,10 @@ public class DocumentService {
         return documentRepository.findAll().stream().map(mapper::toResponse).toList();
     }
 
+    public List<DocumentResponse> getByIds(List<Long> ids) {
+        return documentRepository.findAllById(ids).stream().map(mapper::toResponse).toList();
+    }
+
     public DocumentResponse getById(Long id) {
         return mapper.toResponse(findDocument(id));
     }

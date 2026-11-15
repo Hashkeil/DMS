@@ -21,6 +21,10 @@ export class ApiService {
     return this.http.get<DocumentResponse[]>(DOCUMENTS);
   }
 
+  searchDocuments(q: string): Observable<DocumentResponse[]> {
+    return this.http.get<DocumentResponse[]>(`${DOCUMENTS}/search`, { params: { q } });
+  }
+
   getDocument(id: number): Observable<DocumentResponse> {
     return this.http.get<DocumentResponse>(`${DOCUMENTS}/${id}`);
   }

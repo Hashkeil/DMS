@@ -19,13 +19,12 @@ services:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_USER: ${RABBITMQ_USER:-paperless}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-paperless}
-      UPLOAD_DIRECTORY: /app/uploads
+      RUSTFS_URL: http://rustfs:9000
+      ELASTICSEARCH_URL: http://elasticsearch:9200
       DDL_AUTO: ${DDL_AUTO:-update}
       POSTGRES_DB: ${POSTGRES_DB:-paperless}
       POSTGRES_USER: ${POSTGRES_USER:-paperless}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-paperless}
-    volumes:
-      - uploads:/app/uploads
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -56,9 +55,32 @@ services:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_USER: ${RABBITMQ_USER:-paperless}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-paperless}
+      RUSTFS_URL: http://rustfs:9000
+      ELASTICSEARCH_URL: http://elasticsearch:9200
     depends_on:
       rabbitmq:
         condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+
+  rustfs:
+    image: rustfs/rustfs:latest
+    ports:
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - rustfs-data:/data
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
 
   postgres:
     image: postgres:17
@@ -77,6 +99,6 @@ services:
       retries: 10
 
 volumes:
-  uploads:
+  rustfs-data:
   rabbitmq-data:
   postgres-data:
